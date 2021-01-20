@@ -83,11 +83,11 @@ def measure():
                     time.sleep(small_delay)                       # smoother than a fresh jar of skippy
                     
                     #measure [what?]
-                    reading2[ii,jj]=ai2.read()                    # measure and save [what?]
+                    reading2[ii,jj]=ai2.read()                    # measure and save no gain
                     time.sleep(small_delay)                       # im too hot (hot damn)
-                    reading0[ii,jj]=ai0.read()                    # measure and save [what?]
+                    reading0[ii,jj]=ai0.read()                    # measure and save 10x gain
                     time.sleep(small_delay)                       # called the police and the firemen
-                    reading1[ii,jj]=ai1.read()                    # measure and save [what?]
+                    reading1[ii,jj]=ai1.read()                    # measure and save 100x gain
                     time.sleep(small_delay)                       # im too hot (hot damn)
                     tt[ii,jj]=time.time()-start                   # save time of measurement
                     
