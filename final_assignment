@@ -42,7 +42,7 @@ def measure():
     reading0 = [[0.,0.,0.]]                       # 10x gain: blue, green, red
     reading1 = [[0.,0.,0.]]                       # 100x gain: blue, green, red
     reading2 = [[0.,0.,0.]]                       # no gain: blue, green, red
-    tt = [[0.,0.,0.]]# np.ndarray(shape=(1,3))    # time array
+    tt = [[0.,0.,0.]]# np.ndarray(shape=(1,3))    # time array: blue, green, red
     
     # connect arduino output pins to LEDs
     supplyRED = arduino.get_pin('d:10:o')         # red led
@@ -55,16 +55,15 @@ def measure():
     ai2 = arduino.get_pin('a:2:i')                # goes into array reading2, no gain
     time.sleep(0.2)                               # fill my cup, put some liquor in it
     
-    start = time.time()
+    start = time.time()                           # start time code
     small_delay=0.1                               # Take a sip, sign a check              (longer than 1 ms to avoid crosstalk between channels
     long_delay=1                                  # Julio, get the stretch                (determines how often a measurement is taken)
     
     # Start actual measurement
-    ii=0
-    jj_order=[0,1,2]                              # example: only green is jj_order=[0,1,2]
+    ii=0                                          # measurement number
+    jj_order=[0,1,2]                              
     while ( True ):                               # this loop always runs
-        # as long as measurements are running, measure
-        if (flag_running == True):               
+        if (flag_running == True):                # as long as measurements are running, measure
                 time.sleep(long_delay)            # ride to harlem, hollywood, jackson, mississipi
                 # extra row added to arrays
                 reading0=np.append(reading0,[[0,0,0]],axis=0)   
@@ -78,11 +77,11 @@ def measure():
                     elif jj_order[jj]==1:     supply=supplyGREEN  # then green
                     elif jj_order[jj]==2:     supply=supplyRED    # then red
                     
-                    #print(ii,jj,np.shape(reading0))
+                    #print(ii,jj,np.shape(reading0))               # show current 10x gain array dimensions
                     supply.write(1)                               # Turn led on
                     time.sleep(small_delay)                       # smoother than a fresh jar of skippy
                     
-                    #measure 
+                    #measure no gain, 10x gain, 100x gain
                     reading2[ii,jj]=ai2.read()                    # measure and save no gain
                     time.sleep(small_delay)                       # im too hot (hot damn)
                     reading0[ii,jj]=ai0.read()                    # measure and save 10x gain
@@ -93,10 +92,11 @@ def measure():
                     
                     supply.write(0)                               # turn of led
                     time.sleep(small_delay)                       # make a dragon wanna retire, man
+                    
                 # print current measurements (different methods below to test)
-                print(ii,reading2[ii,:],reading0[ii,:], reading1[ii,:],tt[ii,:])
-                #print(ii,reading2[ii,jj],reading0[ii,jj], reading1[ii,jj],tt[ii,jj])
-                #print(ii, reading0[ii,jj],tt[ii,jj])
+                print(ii,reading2[ii,:],reading0[ii,:], reading1[ii,:],tt[ii,:])       #show measurement number + last row of each measurement array , this is my preferred
+                #print(ii,reading2[ii,jj],reading0[ii,jj], reading1[ii,jj],tt[ii,jj])  #show measurement number + red measurements and times
+                #print(ii, reading0[ii,jj],tt[ii,jj])                                  #show measurement number + red 10x gain measurement and time      
                 # save current measurements
                 np.savez(filename, reading0,reading1,reading2, tt,jj_order,start,time.time())
                 # move on to next measurements
@@ -154,37 +154,30 @@ reading1=tmp['arr_1']
 reading2=tmp['arr_2']
 tt=tmp['arr_3']
 
-# loop make plot
-for jj in range(3):                                                   # for each colour do general plot and plot per different gains
-    if 0:
-        plt.figure(2), plt.subplot(1,3,jj+1)                          # make general plot
-        plt.plot(tt[:-1,jj],reading0[:-1,jj],'r-+', tt[:-1,jj],reading1[:-1,jj], 'b-x')#, t, reading2[:,jj],'g-3')  
-        plt.ylabel('signal')
-        plt.xlabel('time [sec]')
-        if jj==1: plt.title('BLUE')
-        elif jj==0: plt.title('GREEN')
-        elif jj==2: plt.title('RED')
-    if 1:                                                             # make subplots per different gains (no,10x,100x)
-        plt.figure(3)
-        plt.subplot(1,3,2)
-        plt.plot(tt[:-1,0],reading0[:-1,0],'b-+',
-                 tt[:-1,1],reading0[:-1,1],'g-+',
-                 tt[:-1,2],reading0[:-1,2],'r-+')
-        plt.title('10x gain')
-        plt.subplot(1,3,3)
-        plt.plot(tt[:-1,0],reading1[:-1,0],'b-+',
-                 tt[:-1,1],reading1[:-1,1],'g-+',
-                 tt[:-1,2],reading1[:-1,2],'r-+')
-        plt.title('100xgain')
-        plt.subplot(1,3,1)
-        plt.plot(tt[:-1,0],reading2[:-1,0],'b-+',
-                 tt[:-1,1],reading2[:-1,1],'g-+',
-                 tt[:-1,2],reading2[:-1,2],'r-+')
-        plt.title('no gain')
-        plt.tight_layout()                                            # makes the axis ticks readable
-        plt.show()      
+# Make plots
+for jj in range(3):                                                 # make plot with all gains per colour
+    plt.figure(2), plt.subplot(1,3,jj+1)                          
+    plt.plot(tt[:-1,jj],reading0[:-1,jj],'r-+', tt[:-1,jj],reading1[:-1,jj], 'b-x', tt[:-1,jj], reading2[:-1,jj],'g-3')  
+    plt.ylabel('signal')
+    plt.xlabel('time [sec]')
+    if jj==1: plt.title('BLUE')
+    elif jj==0: plt.title('GREEN')
+    elif jj==2: plt.title('RED')
+                                                            
+plt.figure(3)                                                         # make subplots all colours per different gains (no,10x,100x)
+plt.subplot(1,3,2)
+plt.plot(tt[:-1,0],reading0[:-1,0],'b-+', tt[:-1,1],reading0[:-1,1],'g-+', tt[:-1,2],reading0[:-1,2],'r-+')
+plt.title('10x gain')
+plt.subplot(1,3,3)
+plt.plot(tt[:-1,0],reading1[:-1,0],'b-+', tt[:-1,1],reading1[:-1,1],'g-+', tt[:-1,2],reading1[:-1,2],'r-+')
+plt.title('100xgain')
+plt.subplot(1,3,1)
+plt.plot(tt[:-1,0],reading2[:-1,0],'b-+', tt[:-1,1],reading2[:-1,1],'g-+', tt[:-1,2],reading2[:-1,2],'r-+')
+plt.title('no gain')
+plt.tight_layout()                                                    # makes the axis ticks readable
+plt.show()      
 
-# print average of diffent gains (no,10x,100x)
+# print average of diffent gains (no,10x,100x) per colour
 print( np.round(np.mean(reading2,axis=0),3),
        np.round(np.mean(reading0,axis=0),3),
        np.round(np.mean(reading1,axis=0),3))
