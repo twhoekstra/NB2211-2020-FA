@@ -13,7 +13,7 @@ time.sleep(.5)
 filename='measurement.h5'
 
 # https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
-COLUMNS = 3
+COLUMNS = 4
 
 f = tables.open_file(filename, mode='r')
 print('opened')

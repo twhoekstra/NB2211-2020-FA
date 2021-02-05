@@ -40,6 +40,8 @@ def main():
     onbutton.pack()      
     offbutton =  tk.Button(window, text = "Halt", command = lambda: switchoff(flag_running,))      
     offbutton.pack()
+    calibratebutton = tk.Button(window, text = "Calibrate", command = lambda: calibrate(flag_running,))      
+    calibratebutton.pack()
     killbutton = tk.Button(window, text = "EXIT", command = lambda: kill(flag_running,))      
     killbutton.pack()  
     
@@ -72,6 +74,10 @@ def switchoff(flag_running):
     flag_running.put(0)  
     print('flag_running off:\t Measurement has been halted')
     
+def calibrate(flag_running): 
+    flag_running.put(3)  
+    print('flag_running off:\t Calibrating')
+    
 def kill(flag_running):  
     flag_running.put(2) 
     print('Terminating measurement')
@@ -87,11 +93,13 @@ def kill(flag_running):
 # the plot.
 def plot():
 
-    global line, line1, ax, canvas
+    global line1X, line10X, line100X, ax1X, ax10X, ax100X, canvas
     global datastream, timestream, start_time
 
     fig = matplotlib.figure.Figure()
-    ax = fig.add_subplot(1,1,1)
+    ax1X = fig.add_subplot(1,3,1)
+    ax10X = fig.add_subplot(1,3,2)
+    ax100X = fig.add_subplot(1,3,3)
     canvas = FigureCanvasTkAgg(fig, master=window)
     canvas.draw()
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -99,12 +107,26 @@ def plot():
     
     # These empty array will be filled with data as it comes in and will be
     # plotted.
-    datastream = np.zeros((1,2))
+    datastream = np.zeros((1,3))
     timestream = [0]
     start_time = time.time()
     
-    line, = ax.plot([], []) 
-    line1, = ax.plot([], []) 
+    line1X, = ax1X.plot([], []) 
+    line10X, = ax10X.plot([], []) 
+    line100X, = ax100X.plot([], []) 
+    
+    ax1X.set_xlabel('time (s)')
+    ax1X.set_ylabel('voltage (V)')
+    ax1X.set_title('1X')
+    
+    ax10X.set_xlabel('time (s)')
+    ax10X.set_ylabel('voltage (V)')
+    ax10X.set_title('10X')
+    
+    ax100X.set_xlabel('time (s)')
+    ax100X.set_ylabel('voltage (V)')
+    ax100X.set_title('100X')
+
     
     
 def updateplot(q):
@@ -119,18 +141,29 @@ def updateplot(q):
              
              # This code determines what to plot. Specifically, it 
              # concatenates the old data ith the new data from the queue
-             datastream = np.append(datastream, [result], axis = 0)
-             timestream.append(time.time()-start_time)
+             datastream = np.append(datastream, [result[1:]], axis = 0)
+             timestream.append(result[0])
+             now = timestream[-1]
              
              # Calculate the new axes
-             ax.set_xlim([0,np.max(timestream)+0.1]) # 0.1 to add border
-             ax.set_ylim([0,np.max(datastream)+0.1])
+             ax1X.set_xlim([0 ,now + .1]) # 0.1 to add border
+             ax1X.set_ylim([0, np.max(datastream[:,0]) + .1])
              
-             # This code does the plotting
-             line.set_data(timestream, datastream[:,1].tolist())
-             line1.set_data(timestream, datastream[:,0].tolist())
-             ax.draw_artist(line)
-             ax.draw_artist(line1)
+             ax10X.set_xlim([0 ,now + .1]) # 0.1 to add border
+             ax10X.set_ylim([0, np.max(datastream[:,1]) + .1])
+             
+             ax100X.set_xlim([0 ,now + .1]) # 0.1 to add border
+             ax100X.set_ylim([0, np.max(datastream[:,2]) + .1])
+             
+             # This does the plotting
+             line1X.set_data(timestream, datastream[:,0])
+             line10X.set_data(timestream, datastream[:,1])
+             line100X.set_data(timestream, datastream[:,2])
+             
+             ax1X.draw_artist(line1X)
+             ax10X.draw_artist(line10X)
+             ax100X.draw_artist(line100X)
+             
              canvas.draw()
              window.after(500,updateplot,q)
         
@@ -155,7 +188,7 @@ def measurement(q, flag_running):
     filename='measurement.h5'
 
     # https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
-    COLUMNS = 3
+    COLUMNS = 4
     
     f = tables.open_file(filename, mode='w')
     atom = tables.Float64Atom()
@@ -406,8 +439,9 @@ def measurement(q, flag_running):
     it = pyfirmata.util.Iterator(arduino)
     it.start()
     time.sleep(0.5)
-    a0 = arduino.get_pin('a:0:i')
-    a1 = arduino.get_pin('a:1:i')
+    a0 = arduino.get_pin('a:0:i') #1X
+    a1 = arduino.get_pin('a:1:i') #10X
+    a2 = arduino.get_pin('a:2:i') #100X
     time.sleep(0.5)
     
     setupRGB(arduino)
@@ -433,15 +467,17 @@ def measurement(q, flag_running):
         # If the flag setting is 1 measure and send one in three measurements
         # to the plotter.
         if flag == 1:
-            data1 = a1.read() * 5
-            data2 = a0.read() * 5
+            data1X = a2.read() * 5
+            data10X = a0.read() * 5/10
+            data100X = a1.read() * 5/100
+            timepoint = time.time()-start
         
+            # Send to plotter over a certain interval
             if (not i % INTERVAL):
-                q.put([data1,data2])
+                q.put([timepoint, data1X, data10X, data100X])
                 
             # Store to file
-            timepoint = time.time()-start
-            x = [[timepoint, data1, data2]]
+            x = [[timepoint, data1X, data10X, data100X]]
             array_c.append(x)
                 
         # If the flag is set to 2 then the thread will be shutting down
