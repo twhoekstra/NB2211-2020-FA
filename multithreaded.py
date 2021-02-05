@@ -116,15 +116,15 @@ def plot():
     line100X, = ax100X.plot([], []) 
     
     ax1X.set_xlabel('time (s)')
-    ax1X.set_ylabel('voltage (V)')
+    ax1X.set_ylabel('Intensity (%)')
     ax1X.set_title('1X')
     
     ax10X.set_xlabel('time (s)')
-    ax10X.set_ylabel('voltage (V)')
+    ax10X.set_ylabel('Intensity (%)')
     ax10X.set_title('10X')
     
     ax100X.set_xlabel('time (s)')
-    ax100X.set_ylabel('voltage (V)')
+    ax100X.set_ylabel('Intensity (%)')
     ax100X.set_title('100X')
 
     
@@ -141,7 +141,7 @@ def updateplot(q):
              
              # This code determines what to plot. Specifically, it 
              # concatenates the old data ith the new data from the queue
-             datastream = np.append(datastream, [result[1:]], axis = 0)
+             datastream = np.append(datastream, [np.multiply(result[1:],100)], axis = 0) # Multiply to get percentage value
              timestream.append(result[0])
              now = timestream[-1]
              
@@ -181,6 +181,7 @@ def measurement(q, flag_running):
     
     # Set a forced delay between measurements
     DELAY = 1
+    LONG_DELAY = 1
     
     import pyfirmata
     import tables 
@@ -448,8 +449,25 @@ def measurement(q, flag_running):
     
     time.sleep(0.5)
     RGBon('R',power=90)
-    start = time.time()
     
+    while True:
+        time.sleep(DELAY)
+        try:
+            flag = flag_running.get_nowait()
+        except:
+            ""
+        
+        if flag == 3: # Calibrating mode
+            base_1X     = a2.read() 
+            base_10X    = a0.read()
+            base_100X   = a1.read() 
+            
+            time.sleep(LONG_DELAY)
+            
+            break
+    
+    
+    start = time.time()
     time.sleep(1)
     
     # Check whether the current value of the flag that determines whether or 
@@ -467,17 +485,17 @@ def measurement(q, flag_running):
         # If the flag setting is 1 measure and send one in three measurements
         # to the plotter.
         if flag == 1:
-            data1X = a2.read() * 5
-            data10X = a0.read() * 5/10
-            data100X = a1.read() * 5/100
+            intensity_1X = a2.read()/base_1X
+            intensity_10X = a0.read()/base_10X
+            intensity_100X = a1.read()/base_100X
             timepoint = time.time()-start
         
             # Send to plotter over a certain interval
             if (not i % INTERVAL):
-                q.put([timepoint, data1X, data10X, data100X])
+                q.put([timepoint, intensity_1X, intensity_10X, intensity_100X])
                 
             # Store to file
-            x = [[timepoint, data1X, data10X, data100X]]
+            x = [[timepoint, intensity_1X, intensity_10X, intensity_100X]]
             array_c.append(x)
                 
         # If the flag is set to 2 then the thread will be shutting down
