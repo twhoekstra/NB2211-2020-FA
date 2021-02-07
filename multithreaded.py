@@ -93,13 +93,20 @@ def kill(flag_running):
 # the plot.
 def plot():
 
-    global line1X, line10X, line100X, ax1X, ax10X, ax100X, canvas
-    global datastream, timestream, start_time
+    global line, ax, canvas
+    global datastream, timestream
 
     fig = matplotlib.figure.Figure()
-    ax1X = fig.add_subplot(1,3,1)
-    ax10X = fig.add_subplot(1,3,2)
-    ax100X = fig.add_subplot(1,3,3)
+    
+    ax = np.empty((3,1), dtype=object)
+    line = np.empty((3,3), dtype=object)
+    
+    for ii in range(3):
+        ax[ii] = fig.add_subplot(1,3,ii+1)
+        ax[ii][0].set_xlabel('time (s)') # [0] needed to "unpack" object from array
+        ax[ii][0].set_ylabel('Intensity (%)')
+        ax[ii][0].set_title(['1X','10X','100X'][ii])
+  
     canvas = FigureCanvasTkAgg(fig, master=window)
     canvas.draw()
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -107,28 +114,17 @@ def plot():
     
     # These empty array will be filled with data as it comes in and will be
     # plotted.
-    datastream = np.zeros((1,3))
-    timestream = [0]
-    start_time = time.time()
+    datastream = np.zeros((0,3,3))
+    timestream = []
     
-    line1X, = ax1X.plot([], []) 
-    line10X, = ax10X.plot([], []) 
-    line100X, = ax100X.plot([], []) 
-    
-    ax1X.set_xlabel('time (s)')
-    ax1X.set_ylabel('Intensity (%)')
-    ax1X.set_title('1X')
-    
-    ax10X.set_xlabel('time (s)')
-    ax10X.set_ylabel('Intensity (%)')
-    ax10X.set_title('10X')
-    
-    ax100X.set_xlabel('time (s)')
-    ax100X.set_ylabel('Intensity (%)')
-    ax100X.set_title('100X')
+    for ii in range(3):
+        jj = 0
+        for color in ['r','g','b']:
+            line[ii,jj], = ax[ii][0].plot([], [], color)
+            jj += 1
+            
+    fig.tight_layout() # So the axis labels dont overlap with the adjacent plot
 
-    
-    
 def updateplot(q):
     
     global datastream
@@ -136,38 +132,37 @@ def updateplot(q):
     try:
         result=q.get_nowait()
         
-        if result !='Q': # Check if we are not at end of measurement
-             print(f'Fetched the following data: {result}')
+        if type(result) is np.ndarray: # Check if we are not at end of measurement
+            print(f'Fetched the following data: {result}')
              
-             # This code determines what to plot. Specifically, it 
-             # concatenates the old data ith the new data from the queue
-             datastream = np.append(datastream, [np.multiply(result[1:],100)], axis = 0) # Multiply to get percentage value
-             timestream.append(result[0])
-             now = timestream[-1]
+            # This code determines what to plot. Specifically, it 
+            # concatenates the old data ith the new data from the queue
+            datastream = np.append(datastream, [result[:,1:]*100], axis = 0) # Multiply to get percentage value
+            timestream.append(result[0,0])
+            now = timestream[-1]
              
-             # Calculate the new axes
-             ax1X.set_xlim([0 ,now + .1]) # 0.1 to add border
-             ax1X.set_ylim([0, np.max(datastream[:,0]) + .1])
+            # Calculate the new axes
              
-             ax10X.set_xlim([0 ,now + .1]) # 0.1 to add border
-             ax10X.set_ylim([0, np.max(datastream[:,1]) + .1])
              
-             ax100X.set_xlim([0 ,now + .1]) # 0.1 to add border
-             ax100X.set_ylim([0, np.max(datastream[:,2]) + .1])
-             
-             # This does the plotting
-             line1X.set_data(timestream, datastream[:,0])
-             line10X.set_data(timestream, datastream[:,1])
-             line100X.set_data(timestream, datastream[:,2])
-             
-             ax1X.draw_artist(line1X)
-             ax10X.draw_artist(line10X)
-             ax100X.draw_artist(line100X)
-             
-             canvas.draw()
-             window.after(500,updateplot,q)
+            for ii in range(3): # Iterate over 1X, 10X, and 100X plots
+                ax[ii][0].set_xlim([0 ,now + .1]) # 0.1 to add border
+                ax[ii][0].set_ylim([0, np.max(datastream[:,ii,:]) + .1])
+            
+            
+            # Draw
+            for ii in range(3): # Iterate over 1X, 10X, and 100X plots
+                for jj in range(3): # Iterate over colors
+                    line[ii,jj].set_data(timestream, datastream[:,ii,jj])
+              
+            for ii in range(3): # Iterate over 1X, 10X, and 100X plots
+                for jj in range(3): # Iterate over colors
+                    ax[ii][0].draw_artist(line[ii,jj])
+                 
+            canvas.draw()
+            window.after(500,updateplot,q)
         
-        else: # Has reached end of data stream from measuremetn
+        else: # Has reached end of data stream from measurement
+            #result !='Q'
              print('End of queue')
     except: 
         #print("empty")
@@ -177,10 +172,11 @@ def measurement(q, flag_running):
     # Set plotting interval. By this we mean the number of measurements we do
     # per plot update, i.e. if this is set to 10 the plot will only update 
     # every 10 measurements.
-    INTERVAL = 3
+    INTERVAL = 100
+    POWER = 50 # in percent
     
     # Set a forced delay between measurements
-    DELAY = 1
+    DELAY = .3
     LONG_DELAY = 1
     
     import pyfirmata
@@ -189,7 +185,7 @@ def measurement(q, flag_running):
     filename='measurement.h5'
 
     # https://stackoverflow.com/questions/30376581/save-numpy-array-in-append-mode
-    COLUMNS = 4
+    COLUMNS = 12 # = (No. Colors)*(No. Channels +1)
     
     f = tables.open_file(filename, mode='w')
     atom = tables.Float64Atom()
@@ -436,44 +432,65 @@ def measurement(q, flag_running):
     # ------------------------------------------------------------------------
     
     arduino = pyfirmata.ArduinoNano('COM5')
-    time.sleep(0.5)
+    time.sleep(DELAY)
     it = pyfirmata.util.Iterator(arduino)
     it.start()
-    time.sleep(0.5)
+    time.sleep(DELAY)
     a0 = arduino.get_pin('a:0:i') #1X
     a1 = arduino.get_pin('a:1:i') #10X
     a2 = arduino.get_pin('a:2:i') #100X
-    time.sleep(0.5)
+    
+    buzzer = arduino.get_pin('d:2:o') #100X
+    time.sleep(DELAY)
     
     setupRGB(arduino)
     
-    time.sleep(0.5)
-    RGBon('R',power=90)
     
+    # Initial Calibration
+    flag = 0
     while True:
-        time.sleep(DELAY)
+        time.sleep(LONG_DELAY)
         try:
             flag = flag_running.get_nowait()
         except:
             ""
         
         if flag == 3: # Calibrating mode
-            base_1X     = a2.read() 
-            base_10X    = a0.read()
-            base_100X   = a1.read() 
+            reading = np.zeros(3)
+            bases = np.zeros((3,3))
+            ii = 0
+            for color in ['R', 'G', 'B']:
             
+                RGBon(color,power=POWER)
+                time.sleep(LONG_DELAY)
+                
+                reading[0] = a2.read()
+                reading[1] = a0.read()
+                reading[2] = a1.read()
+                
+                time.sleep(LONG_DELAY)
+                bases[ii,:] = reading #1X , then 10X, then 100X
+                ii += 1 
+            
+            # End of calibration
             time.sleep(LONG_DELAY)
+            buzzer.write(1)
+            time.sleep(DELAY)
+            buzzer.write(0)
             
             break
     
-    
+    # Start of measurement loop
     start = time.time()
-    time.sleep(1)
+    time.sleep(DELAY)
     
     # Check whether the current value of the flag that determines whether or 
     # not we should be measuring and passing those measurements on to the plot
-    flag = 0
-    i = 0
+    
+    ii = 0
+    reading = np.zeros(3)
+    intensities = np.zeros((3,4)) # Four columns to accomodate time
+    
     while True:
         time.sleep(DELAY)
         try:
@@ -485,17 +502,30 @@ def measurement(q, flag_running):
         # If the flag setting is 1 measure and send one in three measurements
         # to the plotter.
         if flag == 1:
-            intensity_1X = a2.read()/base_1X
-            intensity_10X = a0.read()/base_10X
-            intensity_100X = a1.read()/base_100X
             timepoint = time.time()-start
+            
+            jj = 0
+            for color in ['R', 'G', 'B']:
+            
+                RGBon(color,power=POWER)
+                time.sleep(LONG_DELAY)
+                reading[0] = a2.read()
+                reading[1] = a0.read()
+                reading[2] = a1.read()
+                
+                time.sleep(LONG_DELAY)
+                intensities[jj,1:] = np.divide(reading, bases[jj,:]) #1X , then 10X, then 100X
+                
+                jj += 1 
+            
+            intensities[0,0] = timepoint
         
             # Send to plotter over a certain interval
-            if (not i % INTERVAL):
-                q.put([timepoint, intensity_1X, intensity_10X, intensity_100X])
+            if (not ii % INTERVAL):
+                q.put(intensities)
                 
             # Store to file
-            x = [[timepoint, intensity_1X, intensity_10X, intensity_100X]]
+            x = [intensities.flatten()]
             array_c.append(x)
                 
         # If the flag is set to 2 then the thread will be shutting down
@@ -510,7 +540,7 @@ def measurement(q, flag_running):
             
             return
             
-        i += 1
+        ii += 1
     q.put('Q') # Signifies end of measurement.
    
 
