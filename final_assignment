@@ -60,7 +60,7 @@ def measure():
     long_delay=1                                  # Julio, get the stretch                (determines how often a measurement is taken)
     
     # Start actual measurement
-    time.sleep(3)                                 # wait a bit before measuring to reduce noise 
+    time.sleep(3)                                 # wait a bit before actually measuring to reduce noise
     ii=0                                          # measurement number
     jj_order=[0,1,2]                              
     while ( True ):                               # this loop always runs
@@ -74,13 +74,13 @@ def measure():
                 time.sleep(small_delay)           # if we show up, we gon' show out
                 # Per colour do actual reading
                 for jj in range(3):
-                    if jj_order[jj]==0:       supply=supplyBLUE   # then blue
+                    if jj_order[jj]==0:       supply=supplyBLUE   # first blue
                     elif jj_order[jj]==1:     supply=supplyGREEN  # then green
                     elif jj_order[jj]==2:     supply=supplyRED    # then red
                     
                     #print(ii,jj,np.shape(reading0))               # show current 10x gain array dimensions
                     supply.write(1)                               # Turn led on
-                    time.sleep(small_delay)                       # smoother than a fresh jar of skippy
+                    time.sleep(long_delay)                       # smoother than a fresh jar of skippy
                     
                     #measure no gain, 10x gain, 100x gain
                     reading2[ii,jj]=ai2.read()                    # measure and save no gain
@@ -161,8 +161,8 @@ for jj in range(3):                                                 # make plot 
     plt.plot(tt[:-1,jj],reading0[:-1,jj],'r-+', tt[:-1,jj],reading1[:-1,jj], 'b-x', tt[:-1,jj], reading2[:-1,jj],'g-3')  
     plt.ylabel('signal')
     plt.xlabel('time [sec]')
-    if jj==1: plt.title('BLUE')
-    elif jj==0: plt.title('GREEN')
+    if jj==1: plt.title('Green')
+    elif jj==0: plt.title('BLUE')
     elif jj==2: plt.title('RED')
                                                             
 plt.figure(3)                                                         # make subplots all colours per different gains (no,10x,100x)
