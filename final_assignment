@@ -80,7 +80,7 @@ def measure():
                     
                     #print(ii,jj,np.shape(reading0))               # show current 10x gain array dimensions
                     supply.write(1)                               # Turn led on
-                    time.sleep(small_delay)                       # smoother than a fresh jar of skippy
+                    time.sleep(long_delay)                       # smoother than a fresh jar of skippy
                     
                     #measure no gain, 10x gain, 100x gain
                     reading2[ii,jj]=ai2.read()                    # measure and save no gain
