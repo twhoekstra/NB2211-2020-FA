@@ -60,6 +60,7 @@ def measure():
     long_delay=1                                  # Julio, get the stretch                (determines how often a measurement is taken)
     
     # Start actual measurement
+    time.sleep(3)                                 # wait a bit before measuring to reduce noise (led intensity stabilizes)
     ii=0                                          # measurement number
     jj_order=[0,1,2]                              
     while ( True ):                               # this loop always runs
