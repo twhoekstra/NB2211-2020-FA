@@ -50,8 +50,8 @@ def measure():
     supplyGREEN= arduino.get_pin('d:8:o')         # green led
     
     # connect arduino input pins
-    ai0 = arduino.get_pin('a:0:i')                # goes into array reading0, 10x gain
-    ai1 = arduino.get_pin('a:1:i')                # goes into array reading1, 100x gain
+    ai0 = arduino.get_pin('a:0:i')                # goes into array reading0, 5x gain
+    ai1 = arduino.get_pin('a:1:i')                # goes into array reading1, 10x gain
     ai2 = arduino.get_pin('a:2:i')                # goes into array reading2, no gain
     time.sleep(0.2)                               # fill my cup, put some liquor in it
     
@@ -85,9 +85,9 @@ def measure():
                     #measure no gain, 10x gain, 100x gain
                     reading2[ii,jj]=ai2.read()                    # measure and save no gain
                     time.sleep(small_delay)                       # im too hot (hot damn)
-                    reading0[ii,jj]=ai0.read()                    # measure and save 10x gain
+                    reading0[ii,jj]=ai0.read()                    # measure and save 5x gain
                     time.sleep(small_delay)                       # called the police and the firemen
-                    reading1[ii,jj]=ai1.read()                    # measure and save 100x gain
+                    reading1[ii,jj]=ai1.read()                    # measure and save 10x gain
                     time.sleep(small_delay)                       # im too hot (hot damn)
                     tt[ii,jj]=time.time()-start                   # save time of measurement
                     
@@ -97,7 +97,7 @@ def measure():
                 # print current measurements (different methods below to test)
                 print(ii,reading2[ii,:],reading0[ii,:], reading1[ii,:],tt[ii,:])       #show measurement number + last row of each measurement array , this is my preferred
                 #print(ii,reading2[ii,jj],reading0[ii,jj], reading1[ii,jj],tt[ii,jj])  #show measurement number + red measurements and times
-                #print(ii, reading0[ii,jj],tt[ii,jj])                                  #show measurement number + red 10x gain measurement and time      
+                #print(ii, reading0[ii,jj],tt[ii,jj])                                  #show measurement number + red 5x gain measurement and time      
                 # save current measurements
                 np.savez(filename, reading0,reading1,reading2, tt,jj_order,start,time.time())
                 # move on to next measurements
@@ -168,10 +168,10 @@ for jj in range(3):                                                 # make plot 
 plt.figure(3)                                                         # make subplots all colours per different gains (no,10x,100x)
 plt.subplot(1,3,2)
 plt.plot(tt[:-1,0],reading0[:-1,0],'b-+', tt[:-1,1],reading0[:-1,1],'g-+', tt[:-1,2],reading0[:-1,2],'r-+')
-plt.title('10x gain')
+plt.title('5x gain')
 plt.subplot(1,3,3)
 plt.plot(tt[:-1,0],reading1[:-1,0],'b-+', tt[:-1,1],reading1[:-1,1],'g-+', tt[:-1,2],reading1[:-1,2],'r-+')
-plt.title('100xgain')
+plt.title('10xgain')
 plt.subplot(1,3,1)
 plt.plot(tt[:-1,0],reading2[:-1,0],'b-+', tt[:-1,1],reading2[:-1,1],'g-+', tt[:-1,2],reading2[:-1,2],'r-+')
 plt.title('no gain')
