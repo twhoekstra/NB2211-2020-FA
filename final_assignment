@@ -105,12 +105,12 @@ def measure():
                 # save current measurements
                 np.savez(filename, reading0,reading1,reading2, tt,jj_order,start,time.time())
                 # determine if measurement is finished
-                if ((time.time()-start) >30 ):                # measurement has run for 16 hrs
+                if ((time.time()-start) >55800):                # measurement has run for 15.5 hrs
                     buzz.write(1)
                     time.sleep(1)
-                    buzz.write(0)     
-                    arduino.sp.close()       # close before stopping, so you free up the COM port again
-                    time.sleep(1)           # Wait a while so that youre sure this happens
+                    buzz.write(0)
+                    arduino.sp.close()                        # close to free up COM
+                    time.sleep(1)
                     kill()
                 # move on to next measurements
                 ii+=1
