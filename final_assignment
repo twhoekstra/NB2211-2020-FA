@@ -105,7 +105,7 @@ def measure():
                 # save current measurements
                 np.savez(filename, reading0,reading1,reading2, tt,jj_order,start,time.time())
                 # determine if measurement is finished
-                if ((time.time()-start) >55800):                # measurement has run for 16 hrs
+                if ((time.time()-start) >55800):                # measurement has run for 15.5 hrs
                     buzz.write(1)
                     time.sleep(1)
                     buzz.write(0)
