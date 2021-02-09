@@ -55,6 +55,10 @@ def measure():
     ai2 = arduino.get_pin('a:2:i')                # goes into array reading2, no gain
     time.sleep(0.2)                               # fill my cup, put some liquor in it
     
+    # connect arduino output pins to buzzer
+    buzz = arduino.get_pin('d:3:o')               # buzzer
+    
+    # set up time stuff
     start = time.time()                           # start time code
     small_delay=0.1                               # Take a sip, sign a check              (longer than 1 ms to avoid crosstalk between channels
     long_delay=1                                  # Julio, get the stretch                (determines how often a measurement is taken)
@@ -100,6 +104,12 @@ def measure():
                 #print(ii, reading0[ii,jj],tt[ii,jj])                                  #show measurement number + red 5x gain measurement and time      
                 # save current measurements
                 np.savez(filename, reading0,reading1,reading2, tt,jj_order,start,time.time())
+                # determine if measurement is finished
+                if ((time.time()-start) >30 ):                # measurement has run for 16 hrs
+                    buzz.write(1)
+                    time.sleep(1)
+                    buzz.write(0)
+                    kill()
                 # move on to next measurements
                 ii+=1
         # if stopping experiment
