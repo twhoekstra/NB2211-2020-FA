@@ -108,7 +108,9 @@ def measure():
                 if ((time.time()-start) >30 ):                # measurement has run for 16 hrs
                     buzz.write(1)
                     time.sleep(1)
-                    buzz.write(0)
+                    buzz.write(0)     
+                    arduino.sp.close()       # close before stopping, so you free up the COM port again
+                    time.sleep(1)           # Wait a while so that youre sure this happens
                     kill()
                 # move on to next measurements
                 ii+=1
