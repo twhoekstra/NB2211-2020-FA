@@ -13,7 +13,7 @@ WINDOW = 100    # The size of the window used for the rolling average
 # tkagg backend is used for live plotting in main program.
 # so we need to switch back to the standard backend
 import matplotlib
-matplotlib.use('Agg') 
+# matplotlib.use('Agg') 
 
 import tables 
 import numpy as np
