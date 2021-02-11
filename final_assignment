@@ -105,7 +105,7 @@ def measure():
                 # save current measurements
                 np.savez(filename, reading0,reading1,reading2, tt,jj_order,start,time.time())
                 # determine if measurement is finished
-                if ((time.time()-start) > 39600):             # measurement has run for 11 hrs
+                if ((time.time()-start) > 14400):             # measurement has run for 11 hrs
                     buzz.write(1)
                     time.sleep(1)
                     buzz.write(0)
@@ -164,31 +164,62 @@ import matplotlib.pyplot as plt
 tmp=np.load(filename)
 reading0=tmp['arr_0']
 reading1=tmp['arr_1']
-reading2=tmp['arr_2']
+reading2=tmp['arr_2'] 
 tt=tmp['arr_3']
 
 # Make plots
+plt.figure(3)                                                       # make subplots all colours per different gains (no,10x,100x)
+plt.subplot(1,3,2)
+plt.plot(tt[reading0[:,0]!=0,0],reading0[reading0[:,0]!=0,0],'b+')
+plt.plot(tt[reading0[:,1]!=0,1],reading0[reading0[:,1]!=0,1],'g+')
+plt.plot(tt[reading0[:,2]!=0,2],reading0[reading0[:,2]!=0,2],'r+')
+
+#plt.plot(tt[reading0[:,0]!=np.isclose(reading0[:,0],0,1e-05),0],reading0[reading0[:,0]!=np.isclose(reading0[:,0],0,1e-05),0],'b+')
+#plt.plot(tt[reading0[:,1]!=np.isclose(reading0[:,1],0,1e-05),1],reading0[reading0[:,1]!=np.isclose(reading0[:,1],0,1e-05),1],'g+')
+#plt.plot(tt[reading0[:,2]!=np.isclose(reading0[:,2],0,1e-05),2],reading0[reading0[:,2]!=np.isclose(reading0[:,2],0,1e-05),2],'r+')
+
+plt.title('10x gain')
+plt.subplot(1,3,3)
+plt.plot(tt[reading1[:,0]!=0,0],reading1[reading1[:,0]!=0,0],'b+')
+plt.plot(tt[reading1[:,1]!=0,1],reading1[reading1[:,1]!=0,1],'g+')
+plt.plot(tt[reading1[:,2]!=0,2],reading1[reading1[:,2]!=0,2],'r+')
+
+#plt.plot(tt[reading1[:,0]!=np.isclose(reading1[:,0],0,1e-05),0],reading1[reading1[:,0]!=np.isclose(reading1[:,0],0,1e-05),0],'b+')
+#plt.plot(tt[reading1[:,1]!=np.isclose(reading1[:,1],0,1e-05),1],reading1[reading1[:,1]!=np.isclose(reading1[:,1],0,1e-05),1],'g+')
+#plt.plot(tt[reading1[:,2]!=np.isclose(reading1[:,2],0,1e-05),2],reading1[reading1[:,2]!=np.isclose(reading1[:,2],0,1e-05),2],'r+')
+
+plt.title('100xgain')
+plt.subplot(1,3,1)
+plt.plot(tt[reading2[:,0]!=0,0],reading2[reading2[:,0]!=0,0],'b+')
+plt.plot(tt[reading2[:,1]!=0,1],reading2[reading2[:,1]!=0,1],'g+')
+plt.plot(tt[reading2[:,2]!=0,2],reading2[reading2[:,2]!=0,2],'r+')
+
+#plt.plot(tt[reading2[:,0]!=np.isclose(reading2[:,0],0,1e-05),0],reading2[reading2[:,0]!=np.isclose(reading2[:,0],0,1e-05),0],'b+')
+#plt.plot(tt[reading2[:,1]!=np.isclose(reading2[:,1],0,1e-05),1],reading2[reading2[:,1]!=np.isclose(reading2[:,1],0,1e-05),1],'g+')
+#plt.plot(tt[reading2[:,2]!=np.isclose(reading2[:,2],0,1e-05),2],reading2[reading2[:,2]!=np.isclose(reading2[:,2],0,1e-05),2],'r+')
+
+plt.title('no gain')
+plt.ylim(0,1.1)
+plt.tight_layout()                                   # makes the axis ticks readable
+plt.show()      
+
+
 for jj in range(3):                                                 # make plot with all gains per colour
     plt.figure(2), plt.subplot(1,3,jj+1)                          
-    plt.plot(tt[:-1,jj],reading0[:-1,jj],'r-+', tt[:-1,jj],reading1[:-1,jj], 'b-x', tt[:-1,jj], reading2[:-1,jj],'g-3')  
+    plt.plot(tt[reading0[:,jj]!=0,jj],reading0[reading0[:,jj]!=0,jj],'b+')
+    plt.plot(tt[reading1[:,jj]!=0,jj],reading1[reading1[:,jj]!=0,jj],'g+')
+    plt.plot(tt[reading2[:,jj]!=0,jj],reading2[reading2[:,jj]!=0,jj],'r+')   
+    #plt.plot(tt[reading0[:,jj]!=np.isclose(reading0[:,jj],0,1e-05),jj],reading0[reading0[:,jj]!=np.isclose(reading0[:,jj],0,1e-05),0],'b+')
+    #plt.plot(tt[reading1[:,jj]!=np.isclose(reading1[:,jj],0,1e-05),jj],reading1[reading1[:,jj]!=np.isclose(reading1[:,jj],0,1e-05),0],'g+')
+    #plt.plot(tt[reading2[:,jj]!=np.isclose(reading2[:,jj],0,1e-05),jj],reading2[reading2[:,jj]!=np.isclose(reading2[:,jj],0,1e-05),0],'r+')
     plt.ylabel('signal')
     plt.xlabel('time [sec]')
+    plt.ylim(0,1.1)
     if jj==1: plt.title('Green')
     elif jj==0: plt.title('BLUE')
     elif jj==2: plt.title('RED')
-                                                            
-plt.figure(3)                                                         # make subplots all colours per different gains (no,10x,100x)
-plt.subplot(1,3,2)
-plt.plot(tt[:-1,0],reading0[:-1,0],'b-+', tt[:-1,1],reading0[:-1,1],'g-+', tt[:-1,2],reading0[:-1,2],'r-+')
-plt.title('10x gain')
-plt.subplot(1,3,3)
-plt.plot(tt[:-1,0],reading1[:-1,0],'b-+', tt[:-1,1],reading1[:-1,1],'g-+', tt[:-1,2],reading1[:-1,2],'r-+')
-plt.title('100xgain')
-plt.subplot(1,3,1)
-plt.plot(tt[:-1,0],reading2[:-1,0],'b-+', tt[:-1,1],reading2[:-1,1],'g-+', tt[:-1,2],reading2[:-1,2],'r-+')
-plt.title('no gain')
-plt.tight_layout()                                                    # makes the axis ticks readable
-plt.show()      
+
+    
 
 # print average of diffent gains (no,10x,100x) per colour
 print( np.round(np.mean(reading2,axis=0),3),
