@@ -1,6 +1,1 @@
-# YEE-st
-
-![YEE](/images/yee.gif)
-
-
-Final Assignment Electronic Instrumentation
+Final Assignment Electronic Instrumentation 2020/2021
